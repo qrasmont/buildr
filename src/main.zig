@@ -20,5 +20,19 @@ pub fn main() !void {
     const content = try reader.readAllAlloc(allocator, file_size);
     defer allocator.free(content);
 
-    print("{s}", .{content});
+    var parser = std.json.Parser.init(allocator, false);
+    defer parser.deinit();
+
+    var tree = try parser.parse(content);
+    defer tree.deinit();
+
+    var tree_iter = tree.root.Object.iterator();
+    while (tree_iter.next()) |entry| {
+        print("{s}\n", .{entry.key_ptr.*});
+        const cmds_items = entry.value_ptr.*.Array.items;
+
+        for (cmds_items) |cmd| {
+            print("{s}\n", .{cmd.String});
+        }
+    }
 }
