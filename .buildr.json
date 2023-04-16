@@ -1,0 +1,3 @@
+{
+	"default": ["zig build", "zig build run"]
+}
