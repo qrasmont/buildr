@@ -20,18 +20,43 @@ pub fn main() !void {
     const content = try reader.readAllAlloc(allocator, file_size);
     defer allocator.free(content);
 
+    var args = std.process.args();
+    // Consume args[0]: program name
+    _ = args.skip();
+
+    var entries = std.ArrayList([]const u8).init(allocator);
+    defer entries.deinit();
+
+    while (args.next()) |arg| {
+        try entries.append(arg);
+    }
+
     var parser = std.json.Parser.init(allocator, false);
     defer parser.deinit();
 
     var tree = try parser.parse(content);
     defer tree.deinit();
 
-    var tree_iter = tree.root.Object.iterator();
-    while (tree_iter.next()) |entry| {
-        print("{s}\n", .{entry.key_ptr.*});
-        const cmds_items = entry.value_ptr.*.Array.items;
+    if (entries.items.len == 0) {
+        var cmds = tree.root.Object.get("default") orelse {
+            print("No default commands to execute.\n", .{});
+            return;
+        };
 
-        for (cmds_items) |cmd| {
+        for (cmds.Array.items) |cmd| {
+            print("{s}\n", .{cmd.String});
+        }
+
+        return;
+    }
+
+    for (entries.items) |entry| {
+        var cmds = tree.root.Object.get(entry) orelse {
+            print("Cloud not find entry '{s}' in config.\n", .{entry});
+            return;
+        };
+
+        for (cmds.Array.items) |cmd| {
             print("{s}\n", .{cmd.String});
         }
     }
