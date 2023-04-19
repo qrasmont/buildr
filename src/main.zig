@@ -44,7 +44,18 @@ pub fn main() !void {
         };
 
         for (cmds.Array.items) |cmd| {
-            print("{s}\n", .{cmd.String});
+            var cargs = std.ArrayList([]const u8).init(allocator);
+            defer cargs.deinit();
+
+            var splits = std.mem.split(u8, cmd.String, " ");
+
+            while (splits.next()) |split| {
+                try cargs.append(split);
+            }
+
+            const arg_slice = try cargs.toOwnedSlice();
+            var result = try std.ChildProcess.exec(.{ .argv = arg_slice, .allocator = allocator });
+            print("{s}\n", .{result.stdout});
         }
 
         return;

@@ -1,4 +1,4 @@
 {
-	"default": ["zig build", "zig build run"],
+	"default": ["zig build", "echo built"],
 	"test": ["zig build test"]
 }
